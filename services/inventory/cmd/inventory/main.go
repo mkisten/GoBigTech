@@ -5,8 +5,8 @@ import (
 	"log"
 	"net"
 
-	inventorypb "github.com/alatair8/GoBigTech/services/inventory/v1"
 	"google.golang.org/grpc"
+	inventorypb "inventory/v1" //github.com/mkisten/GoBigTech/services/
 )
 
 type server struct {

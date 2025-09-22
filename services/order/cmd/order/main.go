@@ -1,7 +1,7 @@
 package main
 
 import (
-	"context"
+	//"context"
 	"encoding/json"
 	"log"
 	"net/http"
@@ -10,9 +10,9 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 
-	inventorypb "github.com/alatair8/GoBigTech/services/inventory/v1"
-	orderapi "github.com/alatair8/GoBigTech/services/order/api"
-	paymentpb "github.com/alatair8/GoBigTech/services/payment/v1"
+	inventorypb "inventory/v1" //github.com/mkisten/GoBigTech/services/
+	orderapi "order/api"       //github.com/mkisten/GoBigTech/services/
+	paymentpb "payment/v1"     //github.com/mkisten/GoBigTech/services/
 )
 
 type orderServer struct {
@@ -27,15 +27,15 @@ func (s *orderServer) PostOrders(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "invalid JSON: "+err.Error(), http.StatusBadRequest)
 		return
 	}
-	if body.UserId == nil || body.Items == nil || len(*body.Items) == 0 ||
-		(*body.Items)[0].ProductId == nil || (*body.Items)[0].Quantity == nil {
+	if body.UserId == "" || body.Items == nil || len(body.Items) == 0 ||
+		body.Items[0].ProductId == "" || body.Items[0].Quantity <= 0 {
 		http.Error(w, "invalid payload", http.StatusBadRequest)
 		return
 	}
-	first := (*body.Items)[0]
-	productID := *first.ProductId
-	qty := int32(*first.Quantity)
-	userID := *body.UserId
+	first := body.Items[0]
+	productID := first.ProductId
+	qty := int32(first.Quantity)
+	userID := body.UserId
 
 	// Вызов Inventory
 	if _, err := s.invClient.ReserveStock(ctx, &inventorypb.ReserveStockRequest{ProductId: productID, Quantity: qty}); err != nil {
@@ -54,17 +54,24 @@ func (s *orderServer) PostOrders(w http.ResponseWriter, r *http.Request) {
 	// Успех
 	id := "order-123"
 	status := "paid"
-	resp := orderapi.Order{Id: &id, UserId: &userID, Status: &status, Items: body.Items}
+	resp := orderapi.Order{Id: id, UserId: userID, Status: status, Items: body.Items}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(resp)
 }
 
+// GetOrders handles GET /orders
+func (s *orderServer) GetOrders(w http.ResponseWriter, r *http.Request) {
+	// For now, return an empty array of orders
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode([]orderapi.Order{})
+}
+
 func (s *orderServer) GetOrdersId(w http.ResponseWriter, r *http.Request, id string) {
 	status := "paid"
 	userID := "u1"
-	items := []orderapi.OrderItem{{ProductId: strPtr("p1"), Quantity: intPtr(2)}}
-	resp := orderapi.Order{Id: &id, UserId: &userID, Status: &status, Items: &items}
+	items := []orderapi.OrderItem{{"p1", 2}}
+	resp := orderapi.Order{Id: id, UserId: userID, Status: status, Items: items}
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(resp)
 }

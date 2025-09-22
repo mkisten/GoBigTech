@@ -5,8 +5,8 @@ import (
 	"log"
 	"net"
 
-	paymentpb "github.com/alatair8/GoBigTech/services/payment/v1"
 	"google.golang.org/grpc"
+	paymentpb "payment/v1" //github.com/alatair8/GoBigTech/services/
 )
 
 type server struct {
